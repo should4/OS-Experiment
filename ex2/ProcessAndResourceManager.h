@@ -21,6 +21,8 @@ private:
     set<int> BlockList;           // PCB 阻塞队列
     // vector<int> RunningList;      // PCB 运行队列
 
+    RCB *_IO; // 代表 IO资源
+
     map<int, RCB *> RCBList; // 资源进程管理器队列 <资源id，资源结构体指针>
 
 public:
@@ -59,4 +61,8 @@ public:
     void ShowRCB(const int &id);                       // 根据进程id查找进程
     void TreePCB(const int &id, const int &level = 0); // 递归显示父子进程
     void Tree();                                       // 以树状形式显示父子进程
+
+    // 进程及资源管理器的升级版 ：IO 资源请求
+    void RequestIO();    // 请求 IO 资源，并产生 IO 中断
+    void IOCompletion(); // IO 完成
 };

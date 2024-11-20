@@ -45,7 +45,9 @@ int main(int argc, char **argv)
         cout << "8. Destroy Process" << endl;
         cout << "9. Tree Process" << endl;
         cout << "10. Timeout" << endl;
-        cout << "11. Exit" << endl;
+        cout << "11. Request IO" << endl;
+        cout << "12. IO Completion" << endl;
+        cout << "13. Exit" << endl;
         cout << "================================================================" << endl;
         int choose;
         cin >> choose;
@@ -123,6 +125,16 @@ int main(int argc, char **argv)
             break;
         }
         case 11:
+        {
+            manager->RequestIO();
+            break;
+        }
+        case 12:
+        {
+            manager->IOCompletion();
+            break;
+        }
+        case 13:
         {
             cout << "Exit !" << endl;
             stop = true;

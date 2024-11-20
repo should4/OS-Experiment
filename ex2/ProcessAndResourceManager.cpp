@@ -17,12 +17,13 @@ ProcessAndResourceManager::ProcessAndResourceManager() : current_id(-1),
     RCB *r1 = new RCB(1, "R1");
     RCB *r2 = new RCB(2, "R2");
     RCB *r3 = new RCB(3, "R3");
-    RCB *r4 = new RCB(4, "R4-IO");
     RCBList.insert(pair<int, RCB *>(0, r0));
     RCBList.insert(pair<int, RCB *>(1, r1));
     RCBList.insert(pair<int, RCB *>(2, r2));
     RCBList.insert(pair<int, RCB *>(3, r3));
-    RCBList.insert(pair<int, RCB *>(4, r4));
+
+    // 初始化 IO 资源
+    _IO = new RCB(4, "IO");
 
     cout << "ProcessAndResourceManager init" << endl;
 
@@ -197,6 +198,12 @@ void ProcessAndResourceManager::Request(const int &id)
         cout << "No such id in RCBList" << endl;
         return;
     }
+    // 判断该资源是不是 IO 资源，Request 函数不处理 IO资源中断，由 Request_IO 函数处理
+    if (RCBList[id]->RID.find("IO") != std::string::npos)
+    {
+        RequestIO();
+        return;
+    }
     // [2] 判断该资源是否可用
     RCB *_rcb = RCBList.at(id);
     if (_rcb->state == FREE)
@@ -255,7 +262,7 @@ void ProcessAndResourceManager::Release(const int &id)
 void ProcessAndResourceManager::Scheduler()
 {
     // 遍历 ReadyList 找出第优先级高于当前正在运行进程 且 最早到来的进程
-
+    cout << "开始调度...." << endl;
     // 判断当前是否有正在运行的进程
     int cur_prio = -1;
     if (current_id != -1)
@@ -292,9 +299,11 @@ void ProcessAndResourceManager::Scheduler()
             break;
         }
     }
+    cout << "调度完成...." << endl;
 }
 
 void ProcessAndResourceManager::Timeout()
+
 {
     if (current_id != -1)
     {
@@ -318,8 +327,8 @@ void ProcessAndResourceManager::ListAllPCB()
 
     // 输出 ReadyList 中的进程
     cout << "|      ready     |" << endl;
-    int level = INIT_PRIORITY;
-    while (level <= SYSTEM_PRIORITY)
+    int level = SYSTEM_PRIORITY;
+    while (level >= INIT_PRIORITY)
     {
         cout << "|    priority " << level << "   |" << endl;
         cout << "| PID | ID | state |" << endl;
@@ -330,7 +339,7 @@ void ProcessAndResourceManager::ListAllPCB()
             cout << "| " << PCBList[id]->PID << " | " << PCBList[id]->ID << " | "
                  << PCBList[id]->state << " |" << endl;
         }
-        ++level;
+        --level;
     }
 
     // 输出 BlockList 中的进程
@@ -447,4 +456,39 @@ void ProcessAndResourceManager::Tree()
     cout << "---------------TreeRCB------------------" << endl;
     TreePCB(0);
     cout << "---------------------------------------" << endl;
+}
+
+void ProcessAndResourceManager::RequestIO()
+{
+    // 当前运行进程请求 IO 中断
+    cout << "请求 IO 中断" << endl;
+    // [1] 将当前运行进程状态切换到阻塞态并加入阻塞队列中
+    PCBList[current_id]->state = BLOCK;
+    BlockList.emplace(current_id);
+    // [2] 将当前进程id 添加到 IO 资源的阻塞队列中,等待 IO 访问完成
+    _IO->BlockList.emplace(PCBList[current_id]);
+    current_id = -1;
+    // [3] 重新调度
+    Scheduler();
+}
+
+void ProcessAndResourceManager::IOCompletion()
+{
+    // 判断 IO 阻塞队列中是否有进程
+    if (_IO->BlockList.empty())
+    {
+        cout << "IO waitting list empty,no proccess to be awake!" << endl;
+        return;
+    }
+    // IO 中断完成
+    cout << "IO 中断完成,";
+    // [1] 当 IO 中断完成后会将 IO 资源阻塞进程队列中的进程唤醒 进程状态由: 阻塞 -> 就绪
+    PCB *_wake_pcb = _IO->BlockList.front();
+    _IO->BlockList.pop();
+    _wake_pcb->state = READY;
+    BlockList.erase(_wake_pcb->ID);
+    ReadyList[_wake_pcb->priority].emplace(_wake_pcb->ID); // 放入就绪队列
+    cout << "进程 " << _wake_pcb->PID << " 被唤醒!" << endl;
+    // [2] 重新调度
+    Scheduler();
 }
