@@ -67,6 +67,7 @@ void ProcessAndResourceManager::CreatePCB(const string pid, int prio)
 
 void ProcessAndResourceManager::DestroyPCB(const int &id)
 {
+    cout << "destroy :" << id << endl;
     // 判断 id 是否合理
     if (PCBList.find(id) == PCBList.end())
     {
@@ -103,7 +104,7 @@ void ProcessAndResourceManager::DestroyPCB(const int &id)
 
         // 利用出入队列将就绪队列中该进程去掉
         queue<int> _que_in;
-        queue<int> _que_out = ReadyList[_pcb->priority];
+        queue<int> _que_out(ReadyList[_pcb->priority]);
         while (!_que_out.empty())
         {
             if (_que_out.front() == _pcb->ID)
@@ -174,9 +175,9 @@ void ProcessAndResourceManager::DestroyPCB(const int &id)
     {
         if ((*itr)->ID == _pcb->ID)
         {
-            cout << "pre_size = " << childs.size() << endl;
-            childs.erase(itr);
-            cout << "cur_size = " << childs.size() << endl;
+            // cout << "pre_size = " << childs.size() << endl;
+            childs.erase(itr); // 存在bug
+            // cout << "cur_size = " << childs.size() << endl;
             cout << "erase child from father " << _pcb->PID << endl;
             break;
         }
@@ -187,6 +188,18 @@ void ProcessAndResourceManager::DestroyPCB(const int &id)
     delete _pcb;
     // [6] 重新调度
     Scheduler();
+}
+void ProcessAndResourceManager::DestroyPCBByPID(const string &pid)
+{
+    for (const auto &itr : PCBList)
+    {
+        if (itr.second->PID == pid)
+        {
+            cout << "pid " << pid << endl;
+            DestroyPCB(itr.first);
+            break;
+        }
+    }
 }
 
 void ProcessAndResourceManager::Request(const int &id)
@@ -226,6 +239,17 @@ void ProcessAndResourceManager::Request(const int &id)
     }
 }
 
+void ProcessAndResourceManager::RequestByRID(const string &rid)
+{
+    for (const auto &itr : RCBList)
+    {
+        if (itr.second->RID == rid)
+        {
+            Request(itr.first);
+        }
+    }
+}
+
 void ProcessAndResourceManager::Release(const int &id)
 {
     // 释放资源步骤
@@ -259,6 +283,16 @@ void ProcessAndResourceManager::Release(const int &id)
     }
 }
 
+void ProcessAndResourceManager::ReleaseByRID(const string &rid)
+{
+    for (const auto &itr : RCBList)
+    {
+        if (itr.second->RID == rid)
+        {
+            Release(itr.first);
+        }
+    }
+}
 void ProcessAndResourceManager::Scheduler()
 {
     // 遍历 ReadyList 找出第优先级高于当前正在运行进程 且 最早到来的进程
@@ -284,7 +318,7 @@ void ProcessAndResourceManager::Scheduler()
             if (current_id != -1)
             {
                 // 如果存在正在运行的进程
-                cout << "进程 : " << PCBList[current_id]->PID << "被进程 : " << PCBList[new_id]->PID << "替换了" << endl;
+                cout << "进程 " << PCBList[current_id]->PID << " 被进程 " << PCBList[new_id]->PID << " 替换了" << endl;
                 // 修改当前正在运行进程的状态为 READY 并将其插入就绪队列
                 PCBList[current_id]->state = READY;
                 ReadyList[cur_prio].push(current_id);
@@ -385,7 +419,6 @@ void ProcessAndResourceManager::ShowPCB(const int &id)
         cout << "   " << child->PID << " ," << endl;
     }
     cout << "}" << endl;
-    cout << "---------------------------------------" << endl;
 
     // 输出所占用资源列表
     cout << "occupied resources {" << endl;
@@ -395,6 +428,17 @@ void ProcessAndResourceManager::ShowPCB(const int &id)
     }
     cout << "}" << endl;
     cout << "---------------------------------------" << endl;
+}
+void ProcessAndResourceManager::ShowPCBByPID(const string &pid)
+{
+    // 遍历 PCB 列表查找
+    for (const auto &itr : PCBList)
+    {
+        if (itr.second->PID == pid)
+        {
+            ShowPCB(itr.first);
+        }
+    }
 }
 
 void ProcessAndResourceManager::ShowRCB(const int &id)
@@ -421,6 +465,17 @@ void ProcessAndResourceManager::ShowRCB(const int &id)
     cout << "---------------------------------------" << endl;
 }
 
+void ProcessAndResourceManager::ShowRCBByRID(const string &rid)
+{
+    // 遍历 RCB 列表查找
+    for (const auto &itr : RCBList)
+    {
+        if (itr.second->RID == rid)
+        {
+            ShowPCB(itr.first);
+        }
+    }
+}
 void ProcessAndResourceManager::TreePCB(const int &id, const int &level)
 {
     if (PCBList.find(id) == PCBList.end())

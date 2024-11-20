@@ -48,17 +48,24 @@ public:
     // 进程操作
     // 删除进程
     void DestroyPCB(const int &id);
+    void DestroyPCBByPID(const string &pid);
 
     // 当前运行进程请求资源
     void Request(const int &id);
+    void RequestByRID(const string &rid);
     // 当前运行进程释放资源
     void Release(const int &id);
+    void ReleaseByRID(const string &rid);
 
     // 进程数据显示
     void ListAllPCB();
     void ListAllRCB();
-    void ShowPCB(const int &id);                       // 根据进程id查找进程
-    void ShowRCB(const int &id);                       // 根据进程id查找进程
+
+    void ShowPCB(const int &id);          // 根据进程id查找进程
+    void ShowPCBByPID(const string &pid); // 根据进程pid查找进程
+    void ShowRCB(const int &id);          // 根据资源id查找进程
+    void ShowRCBByRID(const string &rid); // 根据资源rid查找进程
+
     void TreePCB(const int &id, const int &level = 0); // 递归显示父子进程
     void Tree();                                       // 以树状形式显示父子进程
 

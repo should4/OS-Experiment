@@ -51,7 +51,7 @@ struct PCB
 
     map<int, RCB *> OcpResList; // 已占用资源队列 <资源id,资源结构体指针>
 
-    PCB() : ID(-1), PID(""), priority(-1), state(-1), Parent(nullptr), OcpResList() {};
+    PCB() : ID(-1), PID(""), priority(-1), state(-1), Parent(nullptr), Childs({}), OcpResList({}) {};
     PCB(int _ID, string _PID, int _priority, int _state, PCB *_parent = nullptr) : ID(_ID), PID(_PID), priority(_priority), state(_state), Parent(_parent), OcpResList() {};
     ~PCB()
     {
