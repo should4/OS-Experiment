@@ -4,8 +4,10 @@
 
 using namespace std;
 
-vector<string> split(string s);
+vector<string> split(string s); // 字符串按空格分割
 int str2int(string str);
+
+bool isInt(const string &str); // 判断输入字符串是否是数字
 
 int main(int argc, char **argv)
 {
@@ -165,7 +167,7 @@ int main(int argc, char **argv)
     //     cout << "12. IO Completion" << endl;
     //     cout << "13. Exit" << endl;
 
-    // 交互方式 2 ： 采用固定格式命令的格式 使用
+    // 交互方式 2 ： 采用格式化命令
     bool stop = false;
     while (!stop)
     {
@@ -184,7 +186,7 @@ int main(int argc, char **argv)
         // 对命令进行语法分析
         if (split_str[0] == "cr") // CreatePCB
         {
-            if (split_str.size() != 3)
+            if (split_str.size() != 3 || !isInt(split_str[2]))
             {
                 cout << "command error : " << endl;
                 cout << "create command : cr [PID] [Priority]" << endl;
@@ -320,4 +322,20 @@ vector<string> split(string s)
         l = r + 1;
     }
     return split_s;
+}
+
+bool isInt(const string &str)
+{
+    bool result = true;
+    // 遍历 str 每个字符，判断其 ASCII 码是否在 0-9 之间
+    for (int i = 0; i < str.size(); ++i)
+    {
+        int num = str.at(i) - '0';
+        if (num < 0 || num > 9)
+        {
+            result = false;
+            break;
+        }
+    }
+    return result;
 }

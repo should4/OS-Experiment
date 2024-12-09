@@ -67,7 +67,7 @@ void ProcessAndResourceManager::CreatePCB(const string pid, int prio)
 
 void ProcessAndResourceManager::DestroyPCB(const int &id)
 {
-    cout << "destroy :" << id << endl;
+    // cout << "destroy :" << id << endl;
     // 判断 id 是否合理
     if (PCBList.find(id) == PCBList.end())
     {
@@ -170,7 +170,8 @@ void ProcessAndResourceManager::DestroyPCB(const int &id)
         }
     }
     // [5] 将该父进程的子进程列表中删除该进程
-    auto childs = _pcb->Parent->Childs;
+    // auto childs = _pcb->Parent->Childs; // bug here: 未使用引用类型
+    auto &childs = _pcb->Parent->Childs;
     for (std::vector<PCB *>::iterator itr = childs.begin(); itr != childs.end(); ++itr)
     {
         if ((*itr)->ID == _pcb->ID)
@@ -178,7 +179,7 @@ void ProcessAndResourceManager::DestroyPCB(const int &id)
             // cout << "pre_size = " << childs.size() << endl;
             childs.erase(itr); // 存在bug
             // cout << "cur_size = " << childs.size() << endl;
-            cout << "erase child from father " << _pcb->PID << endl;
+            // cout << "erase child from father " << (*itr)->PID << endl;
             break;
         }
     }
@@ -195,7 +196,7 @@ void ProcessAndResourceManager::DestroyPCBByPID(const string &pid)
     {
         if (itr.second->PID == pid)
         {
-            cout << "pid " << pid << endl;
+            // cout << "pid " << pid << endl;
             DestroyPCB(itr.first);
             break;
         }
