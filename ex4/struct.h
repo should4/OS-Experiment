@@ -44,3 +44,8 @@ struct MemmoryManager // 内存管理对象
     int free_chunk_num;
     int alloc_chunk_num;
 };
+
+// struct MRequest // 请求结构体
+// {
+//     int size; // 请求空间大小
+// };

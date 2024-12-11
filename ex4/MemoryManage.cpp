@@ -29,7 +29,6 @@ void *mm_request(int n, int *query_conunts)
     {
     case FIRST_FIT_STRATEGY:
     {
-        cout << "Use First Fit Stratage" << endl;
         addr = first_fit(n, query_conunts);
         break;
     }
@@ -38,6 +37,13 @@ void *mm_request(int n, int *query_conunts)
         addr = best_fit(n, query_conunts);
         break;
     }
+    }
+
+    if (!addr)
+    {
+#ifdef DEBUG
+        cout << "Allocation refuse" << endl;
+#endif
     }
     return addr;
 }
@@ -76,8 +82,8 @@ void mm_release(void *alloc_addr)
     Chunk *prior_data = (Chunk *)rel_node->prior->data; // 前驱节点数据域
     Chunk *next_data = (Chunk *)rel_node->next->data;   // 后继节点数据域
 
-    cout << "rel_data offset: " << (rel_data->addr - mm) << endl;
-    cout << "rel_data size: " << rel_data->size << endl;
+    // cout << "rel_data offset: " << (rel_data->addr - mm) << endl;
+    // cout << "rel_data size: " << rel_data->size << endl;
 
     // 记录回收内存的大小，为了后续修改块表 free_m，alloc_m 值
     int recycle_size = rel_data->size;
@@ -101,14 +107,14 @@ void mm_release(void *alloc_addr)
             rel_node->prior->next = rel_node->next->next;
             rel_node->next->next->prior = rel_node->prior;
 
-            cout << "after combinition,prior_data size: " << prior_data->size << endl;
+            // cout << "after combinition,prior_data size: " << prior_data->size << endl;
 
             // 细节待完善：为了缓冲区安全，最好将中和后两个节点指针的前继、后继节点指针置为空，防止后续在新创建一个节点时，会将刚刚free掉的指针重新使用，即虽然我们调用了free函数但进程不会直接将这段内存直接归还，而是作为缓存，当后续再次申请时可以直接使用该段内存
             // 释放 middle,next 节点以及数据域内存
-            free(next_data);
-            free(rel_node->next);
-            free(rel_data);
-            free(rel_node);
+            delete next_data;
+            delete rel_node->next;
+            delete rel_data;
+            delete rel_node;
 
             // 链表节点数减少 2
             MManager.list->size -= 2;
@@ -125,9 +131,15 @@ void mm_release(void *alloc_addr)
             rel_node->prior->next = rel_node->next;
             rel_node->next->prior = rel_node->prior;
 
+            // 链表节点数减少 1
+            MManager.list->size--;
+
+            // 已分配区块数减1
+            MManager.alloc_chunk_num--;
+
             // 释放空间
-            free(rel_data);
-            free(rel_node);
+            delete rel_data;
+            delete rel_node;
         }
     }
     else
@@ -144,8 +156,8 @@ void mm_release(void *alloc_addr)
             rel_node->next = next_node->next;
 
             // 释放内存
-            free(next_data);
-            free(next_node);
+            delete next_data;
+            delete next_node;
 
             // 链表节点数减少 1
             // 思考：并未考虑并发安全性问题，并发实现需要加锁
@@ -217,6 +229,38 @@ void mm_init()
     MManager.alloc_m = 0;         // 初始状态，已分配内存为 0
     MManager.free_chunk_num = 1;  // 初始状态，空闲区块数为 1
     MManager.alloc_chunk_num = 0; // 初始状态，已分配区块数为 0
+}
+
+void mm_clear()
+{
+    // 清理链表
+    dub_linklist_clear(MManager.list);
+
+    // 重置 内存管理对象
+    MManager.list = nullptr;
+    MManager.alloc_chunk_num = 0;
+    MManager.free_chunk_num = 0;
+    MManager.alloc_m = 0;
+    MManager.free_m = 0;
+
+    // 释放内存数组
+    delete[] mm;
+}
+
+void dub_linklist_clear(DubLinkList *list)
+{
+    // 删除所有节点
+    DubNode *p = list->head;
+    while (p != nullptr)
+    {
+        DubNode *temp = p;
+        p = p->next;
+        delete (Chunk *)temp->data;
+        delete temp;
+    }
+
+    // 释放双向链表对象
+    delete list;
 }
 
 void *first_fit(int n, int *query_counts)
@@ -340,6 +384,19 @@ void alloc_by_search_free(int n, DubNode *search_free)
 void set_alloc_strat(int strategy)
 {
     cur_alloc_strategy = strategy;
+    switch (cur_alloc_strategy)
+    {
+    case FIRST_FIT_STRATEGY:
+    {
+        cout << "Set First Fit" << endl;
+        break;
+    }
+    case BEST_FIT_STRATEGY:
+    {
+        cout << "Set Best Fit" << endl;
+        break;
+    }
+    }
 }
 
 void *get_addr_by_offset(int offset)
@@ -350,6 +407,37 @@ void *get_addr_by_offset(int offset)
 float get_mm_utilization()
 {
     return (MManager.alloc_m * 1.0 / MEM_SIZE);
+}
+
+int get_mm_alloc_chunk_num()
+{
+    return MManager.alloc_chunk_num;
+}
+
+void *get_alloc_addr_by_index(int index)
+{
+    if (index >= MManager.alloc_chunk_num || index < 0)
+    {
+        return nullptr;
+    }
+
+    DubNode *p = MManager.list->head->next;
+
+    while (true)
+    {
+        if (((Chunk *)p->data)->is_free == 0)
+        {
+            if (index <= 0)
+            {
+                break;
+            }
+            index--;
+        }
+        p = p->next;
+    }
+    // cout << "alloc_addr_by_index size: " << ((Chunk *)p->data)->size << endl;
+
+    return (void *)(((Chunk *)p->data)->addr);
 }
 
 void show_mm()
