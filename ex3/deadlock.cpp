@@ -1,3 +1,13 @@
+/**
+ * @file deadlock.cpp
+ * @author xuanrong gu @3085995438@qq.com
+ * @brief
+ * @version 0.1
+ * @date 2024-12-12
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #include <iostream>
 #include <vector>
 #include <string>

@@ -1,6 +1,6 @@
 /**
  * @file MemoryManage.cpp
- * @author xuanrong gu
+ * @author xuanrong gu @3085995438@qq.com
  * @brief Memory Management
  * @version 0.1
  * @date 2024-12-10

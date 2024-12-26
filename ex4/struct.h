@@ -24,10 +24,10 @@ struct DubNode // 双向链表节点
     DubNode *next;  // 下一个节点指针
 };
 
-struct DubLinkList // 双向链表：采用链表尾单哨兵的模式
+struct DubLinkList // 双向链表：采用链表首位双哨兵的模式
 {
     DubNode *head; // 头指针
-    DubNode *end;  // 尾指针 为哨兵指针，用来迭代使用
+    DubNode *end;  // 尾指针
     int size;      // 链表节点数
 };
 

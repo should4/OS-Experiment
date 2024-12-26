@@ -1,3 +1,13 @@
+/**
+ * @file main.cpp
+ * @author xuanrong gu @3085995438@qq.com
+ * @brief
+ * @version 0.1
+ * @date 2024-12-12
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include <iostream>
 #include "MemoryManage.h"
 #include <time.h>
@@ -94,7 +104,6 @@ void debug_test()
             else
             {
                 cout << "request successfully" << endl;
-                cout << "address : " << addr << endl;
                 cout << "query_counts : " << *query_counts << endl;
             }
             break;

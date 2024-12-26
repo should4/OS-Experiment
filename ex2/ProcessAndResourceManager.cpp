@@ -1,4 +1,5 @@
 #include "ProcessAndResourceManager.h"
+#include <iomanip> // 引入头文件以使用 setw 和 left
 
 ProcessAndResourceManager::ProcessAndResourceManager() : current_id(-1),
                                                          tick_pid(0),
@@ -160,7 +161,7 @@ void ProcessAndResourceManager::DestroyPCB(const int &id)
         break;
     }
 
-    // [3] 将该进程的子进程的父进程，设置为该进程的父进程,并在该父进程中添加子进程s
+    // [3] 将该进程的子进程的父进程，设置为该进程的父进程,并在该父进程中添加子进程
     if (!_pcb->Childs.empty())
     {
         for (const auto &_child : _pcb->Childs)
@@ -225,6 +226,7 @@ void ProcessAndResourceManager::Request(const int &id)
         // [2.1] 如果可用，则将该资源添加到当前运行进程的占用资源列表中，并将该资源状态设置为 已被分配
         _rcb->state = ALLOCATE;
         PCBList[current_id]->OcpResList.emplace(pair<int, RCB *>(_rcb->ID, _rcb));
+        cout << "资源 " << _rcb->RID << " 分配成功" << endl;
     }
     else if (_rcb->state == ALLOCATE)
     {
@@ -267,6 +269,7 @@ void ProcessAndResourceManager::Release(const int &id)
     _cur_pcb->OcpResList.erase(id);
     _rcb->state = FREE;
 
+    cout << "资源 " << _rcb->RID << " 释放成功" << endl;
     // [3] 查看该资源的阻塞进程队列是否为空，
     // 若不为空，则将队首进程从 Block 状态设置为 Ready,并将该资源添加到该进程的占用资源列表中，并重新调度
     if (!_rcb->BlockList.empty())
@@ -279,6 +282,7 @@ void ProcessAndResourceManager::Release(const int &id)
         _blk_pcb->state = READY;
         _blk_pcb->OcpResList.emplace(_rcb->ID, _rcb);
 
+        cout << "阻塞进程 " << _blk_pcb->PID << " 被唤醒" << endl;
         // 重新调度
         Scheduler();
     }
@@ -353,7 +357,7 @@ void ProcessAndResourceManager::Timeout()
 }
 void ProcessAndResourceManager::ListAllPCB()
 {
-    cout << "------------ListAllPCB----------------" << endl;
+    /*cout << "------------ListAllPCB----------------" << endl;
     // 输出正在运行的进程信息
     cout << "|      running     |" << endl;
     cout << "| PID | ID | state |" << endl;
@@ -383,6 +387,54 @@ void ProcessAndResourceManager::ListAllPCB()
     {
         cout << "| " << PCBList[id]->PID << " | " << PCBList[id]->ID << " | "
              << PCBList[id]->state << " |" << endl;
+    }
+
+    cout << "---------------------------------------" << endl;*/
+
+    cout << "------------ListAllPCB----------------" << endl;
+
+    // 输出正在运行的进程信息
+    cout << "|        running        |" << endl;
+    cout << "| " << left << setw(5) << "PID"
+         << "| " << setw(5) << "ID"
+         << "| " << setw(7) << "state"
+         << " |" << endl;
+    cout << "| " << left << setw(5) << PCBList[current_id]->PID
+         << "| " << setw(5) << PCBList[current_id]->ID
+         << "| " << setw(7) << PCBList[current_id]->state
+         << " |" << endl;
+    cout << "----------------------" << endl;
+    // 输出 ReadyList 中的进程
+    cout << "|        ready        |" << endl;
+    int level = SYSTEM_PRIORITY;
+    while (level >= INIT_PRIORITY)
+    {
+        cout << "|      priority " << level << "     |" << endl;
+        cout << "| " << left << setw(5) << "PID"
+             << "| " << setw(5) << "ID"
+             << "| " << setw(7) << "state"
+             << " |" << endl;
+
+        auto cp_queue = ReadyList[level];
+        for (; !cp_queue.empty(); cp_queue.pop())
+        {
+            auto id = cp_queue.front();
+            cout << "| " << left << setw(5) << PCBList[id]->PID
+                 << "| " << setw(5) << PCBList[id]->ID
+                 << "| " << setw(7) << PCBList[id]->state
+                 << " |" << endl;
+        }
+        --level;
+    }
+    cout << "----------------------" << endl;
+    // 输出 BlockList 中的进程
+    cout << "|         block        |" << endl;
+    for (const auto &id : BlockList)
+    {
+        cout << "| " << left << setw(5) << PCBList[id]->PID
+             << "| " << setw(5) << PCBList[id]->ID
+             << "| " << setw(7) << PCBList[id]->state
+             << " |" << endl;
     }
 
     cout << "---------------------------------------" << endl;
@@ -473,7 +525,7 @@ void ProcessAndResourceManager::ShowRCBByRID(const string &rid)
     {
         if (itr.second->RID == rid)
         {
-            ShowPCB(itr.first);
+            ShowRCB(itr.first);
         }
     }
 }
@@ -509,7 +561,7 @@ void ProcessAndResourceManager::TreePCB(const int &id, const int &level)
 void ProcessAndResourceManager::Tree()
 {
     // 将 PCB 的父子关系以树状图的形式显示出来
-    cout << "---------------TreeRCB------------------" << endl;
+    cout << "---------------TreePCB------------------" << endl;
     TreePCB(0);
     cout << "---------------------------------------" << endl;
 }
@@ -518,12 +570,14 @@ void ProcessAndResourceManager::RequestIO()
 {
     // 当前运行进程请求 IO 中断
     cout << "请求 IO 中断" << endl;
+    cout << "进程 " << PCBList[current_id]->PID << " 因中断被阻塞" << endl;
     // [1] 将当前运行进程状态切换到阻塞态并加入阻塞队列中
     PCBList[current_id]->state = BLOCK;
     BlockList.emplace(current_id);
     // [2] 将当前进程id 添加到 IO 资源的阻塞队列中,等待 IO 访问完成
     _IO->BlockList.emplace(PCBList[current_id]);
     current_id = -1;
+
     // [3] 重新调度
     Scheduler();
 }
